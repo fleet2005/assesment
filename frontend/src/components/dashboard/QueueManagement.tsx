@@ -38,7 +38,7 @@ export default function QueueManagement({ onStatsUpdate }: QueueManagementProps)
       const response = await api.get('/queue');
       console.log('Queue items loaded:', response.data);
       setQueueItems(response.data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading queue items:', error);
       console.error('Error response:', error.response?.data);
       toast.error('Failed to load queue items');

@@ -17,10 +17,10 @@ import {
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', icon: Home, description: 'Overview and analytics' },
-  { name: 'Queue Management', icon: Clock, description: 'Manage patient queue' },
-  { name: 'Doctors', icon: Stethoscope, description: 'Doctor management' },
-  { name: 'Appointments', icon: Calendar, description: 'Schedule appointments' },
+  { name: 'Dashboard', icon: Home, description: 'Overview and analytics', href: '/dashboard' },
+  { name: 'Queue Management', icon: Clock, description: 'Manage patient queue', href: '/dashboard' },
+  { name: 'Doctors', icon: Stethoscope, description: 'Doctor management', href: '/dashboard' },
+  { name: 'Appointments', icon: Calendar, description: 'Schedule appointments', href: '/dashboard' },
 ];
 
 interface DashboardLayoutProps {
