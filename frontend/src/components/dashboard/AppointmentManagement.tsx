@@ -541,6 +541,21 @@ function BookingForm({ doctors, preFilledData, onClose, onSubmit }: BookingFormP
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Note about checking available slots */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start space-x-3">
+              <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
+                <span className="text-white text-xs font-bold">!</span>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-blue-900 mb-1">Important Note</h4>
+                <p className="text-sm text-blue-700">
+                  Please check the available slots using the availability calendar before selecting a time to ensure the slot is available for booking.
+                </p>
+              </div>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Patient Name *</label>
