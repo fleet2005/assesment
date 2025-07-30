@@ -8,7 +8,7 @@ import api from '@/lib/api';
 interface Appointment {
   id: string;
   patientName: string;
-  doctorName: string;
+  doctorName?: string; // Optional, will be populated by backend
   appointmentDate: string;
   startTime: string;
   endTime: string;
@@ -41,7 +41,6 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
     appointmentDate: string;
     startTime: string;
     endTime: string;
-    doctorName: string;
   } | null>(null);
 
   useEffect(() => {
@@ -100,6 +99,17 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
     }
   };
 
+  const updateAppointmentStatus = async (appointmentId: string, status: string) => {
+    try {
+      await api.patch(`/appointments/${appointmentId}/status`, { status });
+      toast.success(`Appointment marked as ${status.replace('_', ' ')}`);
+      loadAppointments();
+      onStatsUpdate?.();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update appointment status');
+    }
+  };
+
   const loadAvailableSlots = async () => {
     if (!selectedDoctor) return;
     
@@ -134,8 +144,7 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
       doctorId: selectedDoctor,
       appointmentDate: dateStr,
       startTime: slot,
-      endTime: endTimeStr,
-      doctorName: selectedDoctorData ? `${selectedDoctorData.firstName} ${selectedDoctorData.lastName}` : ''
+      endTime: endTimeStr
     });
     
     toast.success(`Selected slot: ${slot} with Dr. ${selectedDoctorData?.lastName || 'Unknown'}`);
@@ -230,6 +239,12 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
               <div className="w-3 h-3 bg-warning-500 rounded-full"></div>
               <span className="text-sm font-medium text-gray-700">
                 {stats.inProgress} In Progress
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+              <span className="text-sm font-medium text-gray-700">
+                {stats.completed} Completed
               </span>
             </div>
           </div>
@@ -461,6 +476,37 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
                         <span className={`badge ${getStatusColor(appointment.status)}`}>
                           {appointment.status.replace('_', ' ')}
                         </span>
+                        
+                        {/* Status Update Buttons */}
+                        {appointment.status === 'scheduled' && (
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => updateAppointmentStatus(appointment.id, 'in_progress')}
+                              className="px-3 py-1 text-xs bg-warning-100 text-warning-700 border border-warning-200 rounded-lg hover:bg-warning-200 transition-colors"
+                              title="Mark as in progress"
+                            >
+                              Start
+                            </button>
+                            <button
+                              onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
+                              className="px-3 py-1 text-xs bg-success-100 text-success-700 border border-success-200 rounded-lg hover:bg-success-200 transition-colors"
+                              title="Mark as completed"
+                            >
+                              Complete
+                            </button>
+                          </div>
+                        )}
+                        
+                        {appointment.status === 'in_progress' && (
+                          <button
+                            onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
+                            className="px-3 py-1 text-xs bg-success-100 text-success-700 border border-success-200 rounded-lg hover:bg-success-200 transition-colors"
+                            title="Mark as completed"
+                          >
+                            Complete
+                          </button>
+                        )}
+                        
                         <button
                           onClick={() => deleteAppointment(appointment.id)}
                           className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -500,7 +546,6 @@ interface BookingFormProps {
     appointmentDate: string;
     startTime: string;
     endTime: string;
-    doctorName: string;
   } | null;
   onClose: () => void;
   onSubmit: (data: any) => void;
@@ -521,18 +566,7 @@ function BookingForm({ doctors, preFilledData, onClose, onSubmit }: BookingFormP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Get the selected doctor's name
-    const selectedDoctor = doctors.find(d => d.id === formData.doctorId);
-    const doctorName = selectedDoctor ? `${selectedDoctor.firstName} ${selectedDoctor.lastName}` : '';
-    
-    // Include doctor name in the submission
-    const appointmentData = {
-      ...formData,
-      doctorName: doctorName
-    };
-    
-    onSubmit(appointmentData);
+    onSubmit(formData);
   };
 
   return (

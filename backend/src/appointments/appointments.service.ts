@@ -56,7 +56,7 @@ export class AppointmentsService {
     return this.appointmentRepository.save(appointment);
   }
 
-  async findAll(filterDto: FilterAppointmentsDto = {}): Promise<{ appointments: Appointment[]; total: number }> {
+  async findAll(filterDto: FilterAppointmentsDto = {}): Promise<{ appointments: any[]; total: number }> {
     const { patientName, doctorId, status, date, page = 1, limit = 10 } = filterDto;
     const skip = (page - 1) * limit;
 
@@ -93,10 +93,16 @@ export class AppointmentsService {
       .addOrderBy('appointment.startTime', 'ASC')
       .getManyAndCount();
 
-    return { appointments, total };
+    // Transform appointments to include doctorName
+    const transformedAppointments = appointments.map(appointment => ({
+      ...appointment,
+      doctorName: appointment.doctor ? `${appointment.doctor.firstName} ${appointment.doctor.lastName}` : 'Unknown Doctor'
+    }));
+
+    return { appointments: transformedAppointments, total };
   }
 
-  async findOne(id: string): Promise<Appointment> {
+  async findOne(id: string): Promise<any> {
     const appointment = await this.appointmentRepository.findOne({
       where: { id },
       relations: ['doctor'],
@@ -106,7 +112,11 @@ export class AppointmentsService {
       throw new NotFoundException('Appointment not found');
     }
 
-    return appointment;
+    // Transform appointment to include doctorName
+    return {
+      ...appointment,
+      doctorName: appointment.doctor ? `${appointment.doctor.firstName} ${appointment.doctor.lastName}` : 'Unknown Doctor'
+    };
   }
 
   async update(id: string, updateAppointmentDto: UpdateAppointmentDto): Promise<Appointment> {
