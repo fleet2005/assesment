@@ -38,9 +38,16 @@ export default function AvailableDoctors({ onStatsUpdate }: AvailableDoctorsProp
 
   const loadDoctors = async () => {
     try {
+      setIsLoading(true);
       const response = await api.get('/doctors');
-      setDoctors(response.data.doctors || response.data);
-    } catch (error) {
+      console.log('Doctors response:', response.data);
+      
+      // Handle both response formats
+      const doctorsData = response.data.doctors || response.data || [];
+      setDoctors(Array.isArray(doctorsData) ? doctorsData : []);
+    } catch (error: any) {
+      console.error('Error loading doctors:', error);
+      console.error('Error response:', error.response?.data);
       toast.error('Failed to load doctors');
     } finally {
       setIsLoading(false);
@@ -98,25 +105,33 @@ export default function AvailableDoctors({ onStatsUpdate }: AvailableDoctorsProp
 
   const handleAddDoctor = async (formData: any) => {
     try {
-      await api.post('/doctors', formData);
+      console.log('Adding doctor with data:', formData);
+      const response = await api.post('/doctors', formData);
+      console.log('Add doctor response:', response.data);
       toast.success('Doctor added successfully');
       setShowAddForm(false);
       loadDoctors();
       onStatsUpdate?.();
-    } catch (error) {
-      toast.error('Failed to add doctor');
+    } catch (error: any) {
+      console.error('Error adding doctor:', error);
+      console.error('Error response:', error.response?.data);
+      toast.error(error.response?.data?.message || 'Failed to add doctor');
     }
   };
 
   const handleEditDoctor = async (id: string, formData: any) => {
     try {
-      await api.put(`/doctors/${id}`, formData);
+      console.log('Updating doctor with data:', formData);
+      const response = await api.patch(`/doctors/${id}`, formData);
+      console.log('Update doctor response:', response.data);
       toast.success('Doctor updated successfully');
       setEditingDoctor(null);
       loadDoctors();
       onStatsUpdate?.();
-    } catch (error) {
-      toast.error('Failed to update doctor');
+    } catch (error: any) {
+      console.error('Error updating doctor:', error);
+      console.error('Error response:', error.response?.data);
+      toast.error(error.response?.data?.message || 'Failed to update doctor');
     }
   };
 
@@ -145,7 +160,7 @@ export default function AvailableDoctors({ onStatsUpdate }: AvailableDoctorsProp
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="spinner spinner-lg mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading doctors...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading doctors...</p>
         </div>
       </div>
     );
@@ -156,8 +171,8 @@ export default function AvailableDoctors({ onStatsUpdate }: AvailableDoctorsProp
       {/* Header with Actions */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Doctor Management</h2>
-          <p className="text-gray-600">Manage doctors and view their schedules</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Doctor Management</h2>
+          <p className="text-gray-600 dark:text-gray-400">Manage doctors and view their schedules</p>
         </div>
         
         <div className="flex items-center gap-4">
@@ -251,7 +266,7 @@ export default function AvailableDoctors({ onStatsUpdate }: AvailableDoctorsProp
       {(showAddForm || editingDoctor) && (
         <DoctorForm
           doctor={editingDoctor}
-          onSubmit={editingDoctor ? handleEditDoctor : handleAddDoctor}
+          onSubmit={editingDoctor ? (data) => handleEditDoctor(editingDoctor.id, data) : handleAddDoctor}
           onCancel={() => {
             setShowAddForm(false);
             setEditingDoctor(null);

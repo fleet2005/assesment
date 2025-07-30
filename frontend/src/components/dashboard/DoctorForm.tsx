@@ -12,31 +12,28 @@ interface Doctor {
   specialization: string;
   gender: 'male' | 'female' | 'other';
   location: string;
-  status: 'available' | 'busy' | 'off_duty';
+  status?: 'available' | 'busy' | 'off_duty';
   bio?: string;
   availability: any;
 }
 
 interface DoctorFormProps {
   doctor?: Doctor | null;
-  onSubmit: (id: string, data: any) => void;
+  onSubmit: (data: any) => void;
   onCancel: () => void;
 }
 
 const specializations = [
+  'General Practice',
+  'Pediatrics',
   'Cardiology',
   'Dermatology',
-  'Endocrinology',
-  'Gastroenterology',
-  'General Medicine',
-  'Neurology',
-  'Oncology',
   'Orthopedics',
-  'Pediatrics',
+  'Neurology',
   'Psychiatry',
-  'Radiology',
   'Surgery',
-  'Urology'
+  'Emergency Medicine',
+  'Internal Medicine'
 ];
 
 export default function DoctorForm({ doctor, onSubmit, onCancel }: DoctorFormProps) {
@@ -71,7 +68,7 @@ export default function DoctorForm({ doctor, onSubmit, onCancel }: DoctorFormPro
         specialization: doctor.specialization,
         gender: doctor.gender,
         location: doctor.location,
-        status: doctor.status,
+        status: doctor.status || 'available',
         bio: doctor.bio || '',
         availability: doctor.availability
       });
@@ -80,11 +77,7 @@ export default function DoctorForm({ doctor, onSubmit, onCancel }: DoctorFormPro
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (doctor) {
-      onSubmit(doctor.id, formData);
-    } else {
-      onSubmit('', formData);
-    }
+    onSubmit(formData);
   };
 
   const updateAvailability = (day: string, field: string, value: any) => {
@@ -102,25 +95,25 @@ export default function DoctorForm({ doctor, onSubmit, onCancel }: DoctorFormPro
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-scaleIn">
-        <div className="p-6 border-b border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-scaleIn">
+        <div className="p-6 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center">
                 <User className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   {doctor ? 'Edit Doctor' : 'Add New Doctor'}
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {doctor ? 'Update doctor information' : 'Add a new doctor to the system'}
                 </p>
               </div>
             </div>
             <button
               onClick={onCancel}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <X className="h-6 w-6" />
             </button>
@@ -260,10 +253,9 @@ export default function DoctorForm({ doctor, onSubmit, onCancel }: DoctorFormPro
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Status *
+                  Status
                 </label>
                 <select
-                  required
                   value={formData.status}
                   onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
                   className="input-field"
@@ -273,6 +265,8 @@ export default function DoctorForm({ doctor, onSubmit, onCancel }: DoctorFormPro
                   <option value="off_duty">Off Duty</option>
                 </select>
               </div>
+
+
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsEnum, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsEmail, IsEnum, IsOptional, IsBoolean, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { DoctorSpecialization, DoctorGender, DoctorStatus } from '../entities/doctor.entity';
 
@@ -36,6 +36,11 @@ export class CreateDoctorDto {
   @IsString()
   bio?: string;
 
+  @ApiProperty({ enum: DoctorStatus, example: DoctorStatus.AVAILABLE, required: false })
+  @IsOptional()
+  @IsEnum(DoctorStatus)
+  status?: DoctorStatus;
+
   @ApiProperty({
     example: {
       monday: { start: '09:00', end: '17:00', available: true },
@@ -46,8 +51,11 @@ export class CreateDoctorDto {
       saturday: { start: '09:00', end: '13:00', available: true },
       sunday: { start: '00:00', end: '00:00', available: false },
     },
+    required: false,
   })
-  availability: {
+  @IsOptional()
+  @IsObject()
+  availability?: {
     monday: { start: string; end: string; available: boolean };
     tuesday: { start: string; end: string; available: boolean };
     wednesday: { start: string; end: string; available: boolean };
@@ -106,6 +114,7 @@ export class UpdateDoctorDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsObject()
   availability?: {
     monday: { start: string; end: string; available: boolean };
     tuesday: { start: string; end: string; available: boolean };
