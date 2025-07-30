@@ -6,6 +6,7 @@ import { DoctorsModule } from './doctors/doctors.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { QueueModule } from './queue/queue.module';
 import { TypeOrmConfigService } from './config/typeorm.config';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -21,5 +22,6 @@ import { TypeOrmConfigService } from './config/typeorm.config';
     AppointmentsModule,
     QueueModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {} 
