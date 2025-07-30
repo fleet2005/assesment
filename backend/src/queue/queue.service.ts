@@ -23,7 +23,6 @@ export class QueueService {
 
   async findAll(): Promise<QueueItem[]> {
     return this.queueItemRepository.find({
-      where: { status: QueueStatus.WAITING },
       order: { priority: 'DESC', arrivalTime: 'ASC' },
       relations: ['assignedDoctor'],
     });
