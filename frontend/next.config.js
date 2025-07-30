@@ -11,9 +11,6 @@ const nextConfig = {
       },
     ];
   },
-  experimental: {
-    esmExternals: 'loose',
-  },
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
