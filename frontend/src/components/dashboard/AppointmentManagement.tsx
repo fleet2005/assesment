@@ -521,7 +521,18 @@ function BookingForm({ doctors, preFilledData, onClose, onSubmit }: BookingFormP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Get the selected doctor's name
+    const selectedDoctor = doctors.find(d => d.id === formData.doctorId);
+    const doctorName = selectedDoctor ? `${selectedDoctor.firstName} ${selectedDoctor.lastName}` : '';
+    
+    // Include doctor name in the submission
+    const appointmentData = {
+      ...formData,
+      doctorName: doctorName
+    };
+    
+    onSubmit(appointmentData);
   };
 
   return (
