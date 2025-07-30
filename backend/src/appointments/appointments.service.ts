@@ -182,9 +182,18 @@ export class AppointmentsService {
         const appointmentStart = appointment.startTime;
         const appointmentEnd = appointment.endTime;
         
+        // Normalize time formats - remove seconds if present
+        const normalizedAppointmentStart = appointmentStart.split(':').slice(0, 2).join(':');
+        const normalizedSlotTime = slotTime;
+        
         // Check if the slot overlaps with any existing appointment
-        // Slot is considered booked if it falls within any existing appointment time range (inclusive)
-        return slotTime >= appointmentStart && slotTime < appointmentEnd;
+        // Only block the start time slot, not the end time slot
+        const booked = normalizedSlotTime === normalizedAppointmentStart;
+        
+        // Debug logging
+        console.log(`Slot: ${normalizedSlotTime}, Appointment: ${normalizedAppointmentStart}-${appointmentEnd}, Booked: ${booked}`);
+        
+        return booked;
       });
 
       if (!isBooked) {
