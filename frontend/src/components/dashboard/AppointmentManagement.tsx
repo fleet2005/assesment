@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Calendar, Clock, User, Plus, X, Phone, Mail, MapPin, Activity, Users as UsersIcon, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, User, Plus, X, Phone, Mail, MapPin, Activity, Users as UsersIcon, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import api from '@/lib/api';
 
 interface Appointment {
@@ -33,6 +33,16 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
   const [isLoading, setIsLoading] = useState(true);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDoctor, setSelectedDoctor] = useState('');
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [preFilledData, setPreFilledData] = useState<{
+    doctorId: string;
+    appointmentDate: string;
+    startTime: string;
+    endTime: string;
+    doctorName: string;
+  } | null>(null);
 
   useEffect(() => {
     loadAppointments();
@@ -65,10 +75,70 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
       toast.success('Appointment booked successfully');
       setShowBookingForm(false);
       loadAppointments();
+      // Refresh available slots if we have a selected doctor and date
+      if (selectedDoctor) {
+        loadAvailableSlots();
+      }
       onStatsUpdate?.();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to book appointment');
     }
+  };
+
+  const deleteAppointment = async (appointmentId: string) => {
+    try {
+      await api.delete(`/appointments/${appointmentId}`);
+      toast.success('Appointment deleted successfully');
+      loadAppointments();
+      // Refresh available slots if we have a selected doctor and date
+      if (selectedDoctor) {
+        loadAvailableSlots();
+      }
+      onStatsUpdate?.();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete appointment');
+    }
+  };
+
+  const loadAvailableSlots = async () => {
+    if (!selectedDoctor) return;
+    
+    setIsLoadingSlots(true);
+    try {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      const response = await api.get(`/appointments/slots/${selectedDoctor}/${dateStr}`);
+      setAvailableSlots(response.data || []);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load available slots');
+      setAvailableSlots([]);
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
+  const handleSlotSelect = (slot: string) => {
+    // Pre-fill the booking form with selected slot
+    setShowBookingForm(true);
+    
+    // Calculate end time (30 minutes after start time)
+    const startTime = new Date(`2000-01-01T${slot}`);
+    const endTime = new Date(startTime.getTime() + 30 * 60 * 1000); // Add 30 minutes
+    const endTimeStr = endTime.toTimeString().slice(0, 5);
+    
+    // Auto-fill the booking form with selected details
+    const selectedDoctorData = doctors.find(d => d.id === selectedDoctor);
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    
+    // Store the pre-filled data to pass to the booking form
+    setPreFilledData({
+      doctorId: selectedDoctor,
+      appointmentDate: dateStr,
+      startTime: slot,
+      endTime: endTimeStr,
+      doctorName: selectedDoctorData ? `${selectedDoctorData.firstName} ${selectedDoctorData.lastName}` : ''
+    });
+    
+    toast.success(`Selected slot: ${slot} with Dr. ${selectedDoctorData?.lastName || 'Unknown'}`);
   };
 
   const getStatusColor = (status: string) => {
@@ -248,17 +318,73 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
                 <Calendar className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Today's Schedule</h3>
-                <p className="text-sm text-gray-600">Appointment overview</p>
+                <h3 className="text-lg font-bold text-gray-900">Availability Calendar</h3>
+                <p className="text-sm text-gray-600">Check doctor availability</p>
               </div>
             </div>
-            <div className="text-center py-8">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-10 w-10 text-gray-400" />
+            
+            {/* Doctor and Date Selection */}
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Doctor</label>
+                <select
+                  value={selectedDoctor}
+                  onChange={(e) => setSelectedDoctor(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="">Choose a doctor</option>
+                  {doctors.map((doctor) => (
+                    <option key={doctor.id} value={doctor.id}>
+                      Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <p className="text-sm text-gray-500 mb-2">Calendar view coming soon</p>
-              <p className="text-xs text-gray-400">Interactive calendar with appointment slots</p>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
+                <input
+                  type="date"
+                  value={selectedDate.toISOString().split('T')[0]}
+                  onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              
+              {selectedDoctor && (
+                <button
+                  onClick={loadAvailableSlots}
+                  className="w-full btn-primary"
+                  disabled={isLoadingSlots}
+                >
+                  {isLoadingSlots ? 'Loading...' : 'Check Availability'}
+                </button>
+              )}
             </div>
+            
+            {/* Available Slots */}
+            {availableSlots.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">Available Slots</h4>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {availableSlots.map((slot, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSlotSelect(slot)}
+                      className="px-3 py-2 text-sm bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {selectedDoctor && availableSlots.length === 0 && !isLoadingSlots && (
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-500">No available slots for this date</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -328,6 +454,13 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
                         <span className={`badge ${getStatusColor(appointment.status)}`}>
                           {appointment.status.replace('_', ' ')}
                         </span>
+                        <button
+                          onClick={() => deleteAppointment(appointment.id)}
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                          title="Delete appointment"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -341,7 +474,11 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
       {showBookingForm && (
         <BookingForm
           doctors={doctors}
-          onClose={() => setShowBookingForm(false)}
+          preFilledData={preFilledData}
+          onClose={() => {
+            setShowBookingForm(false);
+            setPreFilledData(null);
+          }}
           onSubmit={bookAppointment}
         />
       )}
@@ -351,19 +488,26 @@ export default function AppointmentManagement({ onStatsUpdate }: AppointmentMana
 
 interface BookingFormProps {
   doctors: Doctor[];
+  preFilledData?: {
+    doctorId: string;
+    appointmentDate: string;
+    startTime: string;
+    endTime: string;
+    doctorName: string;
+  } | null;
   onClose: () => void;
   onSubmit: (data: any) => void;
 }
 
-function BookingForm({ doctors, onClose, onSubmit }: BookingFormProps) {
+function BookingForm({ doctors, preFilledData, onClose, onSubmit }: BookingFormProps) {
   const [formData, setFormData] = useState({
     patientName: '',
     patientPhone: '',
     patientEmail: '',
-    doctorId: '',
-    appointmentDate: '',
-    startTime: '',
-    endTime: '',
+    doctorId: preFilledData?.doctorId || '',
+    appointmentDate: preFilledData?.appointmentDate || '',
+    startTime: preFilledData?.startTime || '',
+    endTime: preFilledData?.endTime || '',
     type: 'consultation',
     notes: '',
   });

@@ -20,8 +20,8 @@ export class AppointmentsService {
     // Check if doctor exists
     const doctor = await this.doctorsService.findOne(doctorId);
 
-    // Check for scheduling conflicts
-    const conflictingAppointment = await this.appointmentRepository.findOne({
+    // Check for scheduling conflicts - check for time overlaps
+    const conflictingAppointments = await this.appointmentRepository.find({
       where: {
         doctorId,
         appointmentDate: new Date(appointmentDate),
@@ -29,7 +29,22 @@ export class AppointmentsService {
       },
     });
 
-    if (conflictingAppointment) {
+    // Check if any existing appointment overlaps with the new appointment
+    const hasConflict = conflictingAppointments.some(existingAppointment => {
+      const existingStart = existingAppointment.startTime;
+      const existingEnd = existingAppointment.endTime;
+      
+      // Check if the new appointment overlaps with any existing appointment
+      // Overlap occurs if:
+      // 1. New start time is before existing end time AND new end time is after existing start time
+      // 2. Or if the appointments are exactly the same time
+      return (
+        (startTime < existingEnd && endTime > existingStart) ||
+        (startTime === existingStart && endTime === existingEnd)
+      );
+    });
+
+    if (hasConflict) {
       throw new ConflictException('Doctor has a conflicting appointment at this time');
     }
 
@@ -162,10 +177,15 @@ export class AppointmentsService {
     while (startTime < endTime) {
       const slotTime = startTime.toTimeString().slice(0, 5);
       
-      // Check if slot is available
-      const isBooked = existingAppointments.some(appointment => 
-        appointment.startTime === slotTime
-      );
+      // Check if slot is available by checking if any appointment overlaps with this slot
+      const isBooked = existingAppointments.some(appointment => {
+        const appointmentStart = appointment.startTime;
+        const appointmentEnd = appointment.endTime;
+        
+        // Check if the slot overlaps with any existing appointment
+        // Slot is considered booked if it falls within any existing appointment time range (inclusive)
+        return slotTime >= appointmentStart && slotTime < appointmentEnd;
+      });
 
       if (!isBooked) {
         slots.push(slotTime);
