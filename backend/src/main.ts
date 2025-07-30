@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
-import * as compression from 'compression';
 import { AppModule } from './app.module';
 import { AuthService } from './auth/auth.service';
 
@@ -11,11 +10,10 @@ async function bootstrap() {
 
   // Security middleware
   app.use(helmet());
-  app.use(compression());
 
   // CORS configuration
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:4000',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
     credentials: true,
   });
 
